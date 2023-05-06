@@ -84,12 +84,16 @@ public class User extends DatabaseGateway {
     }
 
     public boolean update() {
+        if(User_Id == 0) return false;
+
         try(ResultSet rs = executeQuery(CREATE, Address_Id, Firstname, Lastname, Password, Email, Permission, Activeuntil, Phone, User_Id)){
             return true;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
+
 
 }
 

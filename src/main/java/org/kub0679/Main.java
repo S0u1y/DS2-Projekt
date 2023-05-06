@@ -27,7 +27,7 @@ public class Main {
             System.out.println(user1);
         }
         user1.close();
-        if(user2 ==null){
+        if(user2 == null){
             user2 = User.builder()
                     .Firstname("Josh")
                     .Lastname("Ridiculous")

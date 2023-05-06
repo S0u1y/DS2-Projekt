@@ -47,19 +47,20 @@ public class DatabaseGateway implements Closeable {
             PreparedStatement statement = connection.prepareStatement(sql);
             int i = 1;
             for(Object object : args){
-                if(object instanceof Integer integer){
-                    statement.setInt(i, integer);
-                } else if (object instanceof Double dubl) {
-                    statement.setDouble(i, dubl);
-                } else if (object instanceof String string) {
-                    statement.setString(i, string);
-                } else if(object == null){
-                    statement.setString(i, null);
-                }
-                else{
-                    System.out.println("Instance does not fall within bounds.");
-                    return null;
-                }
+//                if(object instanceof Integer integer){
+//                    statement.setInt(i, integer);
+//                } else if (object instanceof Double dubl) {
+//                    statement.setDouble(i, dubl);
+//                } else if (object instanceof String string) {
+//                    statement.setString(i, string);
+//                } else if(object == null){
+//                    statement.setString(i, null);
+//                }
+//                else{
+//                    System.out.println("Instance does not fall within bounds.");
+//                    return null;
+//                }
+                statement.setObject(i, object);
                 i++;
             }
             if(sql.equals(CREATE) || sql.equals(UPDATE) || sql.equals(DELETE)){
