@@ -52,4 +52,13 @@ public class MainTests {
 
     }
 
+    @Test
+    public void TestGetAllUsers(){
+        User[] users = User.getAll();
+        assert users != null;
+        for(User user : users){
+            System.out.println(user);
+        }
+    }
+
 }

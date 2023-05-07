@@ -14,9 +14,9 @@ import java.sql.SQLException;
 @ToString
 public class User extends DatabaseGateway {
     @DBField(strategy = DBField.Strategy.Id)
-    public int User_Id;
+    private Integer User_Id;
     @DBField
-    public int Address_Id;
+    public Integer Address_Id;
     @DBField
     public String Firstname;
     @DBField
@@ -35,9 +35,11 @@ public class User extends DatabaseGateway {
     private static final String FIND_BY_ID = "SELECT * FROM \"User\" WHERE user_id = ?";
 
     public User() {
+        super();
     }
 
     public User(int user_Id, int address_Id, String firstname, String lastname, String password, String email, String permission, Date activeuntil, String phone) {
+        this();
         User_Id = user_Id;
         Address_Id = address_Id;
         Firstname = firstname;
@@ -49,7 +51,9 @@ public class User extends DatabaseGateway {
         Phone = phone;
     }
 
-
+    public User(ResultSet rs) {
+        super(rs);
+    }
 
     //Maybe make the sql functions close automatically...
     public boolean create(){
@@ -68,21 +72,33 @@ public class User extends DatabaseGateway {
         }
     }
 
+    public static User[] getAll() {
+        try (
+                User user = new User();
+                ResultSet rs = user.executeQuery(SELECT);
+                ResultSet sizeResult = user.executeQuery("Select count(*) FROM \"User\"");
+        ){
+            if (rs == null) return null;
+            sizeResult.next();
+            int size = sizeResult.getInt(1);
+            User[] output = new User[size];
+
+            for (int i = 0; rs.next(); i++) {
+                output[i] = new User(rs);
+            }
+
+            return output;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static User findById(int user_id){
         try(ResultSet rs = new User().executeQuery(FIND_BY_ID, user_id)){
             if (rs == null) return null;
             if (!rs.next()) return null;
-            return new User(
-                    rs.getInt("user_id"),
-                    rs.getInt("address_id"),
-                    rs.getString("firstName"),
-                    rs.getString("lastName"),
-                    rs.getString("password"),
-                    rs.getString("email"),
-                    rs.getString("permission"),
-                    rs.getDate("activeUntil"),
-                    rs.getString("phone")
-            );
+
+            return new User(rs);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

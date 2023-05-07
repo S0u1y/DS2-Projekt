@@ -9,16 +9,20 @@ public class DatabaseGateway implements Closeable {
 
     private String URL;
 
-    private String className = this.getClass().getSimpleName();
-    protected String CREATE;
-    protected String SELECT;
+    protected static String CREATE;
+    protected static String SELECT;
     protected String FIND_BY_ID;
-    protected String UPDATE;
-    protected String DELETE;
+    protected static String UPDATE;
+    protected static String DELETE;
 
     public DatabaseGateway(){
+        if(CREATE != null) return;
+        System.out.println("Creating Base");
+
+        String className = this.getClass().getSimpleName();
+
         if(className.equalsIgnoreCase("user") || className.equalsIgnoreCase("comment")){ //cannot use some names...
-            className = "\""+className+"\"";
+            className = "\""+ className +"\"";
         }
 
         CREATE = "INSERT INTO " + className + "(";
@@ -66,6 +70,8 @@ public class DatabaseGateway implements Closeable {
             }
         }
 
+
+
         //SETUP DELETE STRING
         for (int i = 0; i < fields.length; i++) {
             Field field = fields[i];
@@ -81,19 +87,44 @@ public class DatabaseGateway implements Closeable {
 //        System.out.println(DELETE); //Debugging is nice
     }
 
-
-
-    private Connection connection = null;
-    protected Connection connect(){
+    public DatabaseGateway(ResultSet resultSet) {
+        Field[] fields = this.getClass().getDeclaredFields();
 
         try {
-            connection = DriverManager.getConnection(
-                    "jdbc:oracle:thin:@dbsys.cs.vsb.cz:1521:oracle",
-                    "kub0679",
-                    "yP9LP7c9fa8s202z");
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            for(int i = 0; i < fields.length; i++){
+                Field field = fields[i];
+                if(!field.isAnnotationPresent(DBField.class)) continue;
+
+                if(!field.canAccess(this)){
+                    field.setAccessible(true);
+
+                    field.set(this, resultSet.getObject(field.getName(), field.getType()));
+
+                    field.setAccessible(false);
+                }else{
+                    field.set(this, resultSet.getObject(field.getName(), field.getType()));
+                }
+            }
+        } catch (IllegalAccessException | SQLException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+
+    //one connection per class,
+    //might be worth considering to create a separate DBConnector class that'd be static for all.
+    private static Connection connection = null;
+    protected Connection connect(){
+        if(connection == null)
+            try {
+                connection = DriverManager.getConnection(
+                        "jdbc:oracle:thin:@dbsys.cs.vsb.cz:1521:oracle",
+                        "kub0679",
+                        "yP9LP7c9fa8s202z");
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+
         return connection;
     }
     protected ResultSet executeQuery(String sql){
@@ -110,7 +141,7 @@ public class DatabaseGateway implements Closeable {
         }
         return null;
     }
-    //maybe this should be allowed to thro outside of itself...
+    //maybe this should be allowed to throw outside of itself...
     protected ResultSet executeQuery(String sql, Object ... args){
         connection = connect();
         try {
@@ -143,8 +174,9 @@ public class DatabaseGateway implements Closeable {
     public void close(){
         System.out.println("Closing Gateway...");
         try {
-            if(this.connection != null && !this.connection.isClosed()){
+            if(connection != null && !connection.isClosed()){
                 connection.close();
+                connection = null;
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
