@@ -1,6 +1,7 @@
 package org.kub0679.ActiveRecords;
 
 import lombok.*;
+import org.kub0679.DBField;
 import org.kub0679.DatabaseGateway;
 
 import java.sql.Date;
@@ -12,25 +13,31 @@ import java.sql.SQLException;
 @Builder
 @ToString
 public class User extends DatabaseGateway {
+    @DBField(strategy = DBField.Strategy.Id)
     public int User_Id;
+    @DBField
     public int Address_Id;
+    @DBField
     public String Firstname;
+    @DBField
     public String Lastname;
+    @DBField
     public String Password;
+    @DBField
     public String Email;
+    @DBField
     public String Permission;
+    @DBField
     public Date Activeuntil;
+    @DBField
     public String Phone;
 
     private static final String FIND_BY_ID = "SELECT * FROM \"User\" WHERE user_id = ?";
 
-    public User(){
-        CREATE = "INSERT INTO \"User\"(Address_Id, Firstname, Lastname, Password, Email, Permission, ActiveUntil, Phone) VALUES(?,?,?,?,?,?,?,?)";
-        UPDATE = "UPDATE \"User\" SET Address_id=?, firstname=?, lastname=?, password=?, email=?, permission=?, activeUntil=?, phone=? WHERE user_id = ?";
+    public User() {
     }
 
     public User(int user_Id, int address_Id, String firstname, String lastname, String password, String email, String permission, Date activeuntil, String phone) {
-        this();
         User_Id = user_Id;
         Address_Id = address_Id;
         Firstname = firstname;
@@ -41,6 +48,8 @@ public class User extends DatabaseGateway {
         Activeuntil = activeuntil;
         Phone = phone;
     }
+
+
 
     //Maybe make the sql functions close automatically...
     public boolean create(){

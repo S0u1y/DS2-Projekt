@@ -1,17 +1,86 @@
 package org.kub0679;
 
 import java.io.Closeable;
+import java.lang.reflect.Field;
 import java.sql.*;
 
 //Supertype for gateways
 public class DatabaseGateway implements Closeable {
 
     private String URL;
+
+    private String className = this.getClass().getSimpleName();
     protected String CREATE;
     protected String SELECT;
     protected String FIND_BY_ID;
     protected String UPDATE;
     protected String DELETE;
+
+    public DatabaseGateway(){
+        if(className.equalsIgnoreCase("user") || className.equalsIgnoreCase("comment")){ //cannot use some names...
+            className = "\""+className+"\"";
+        }
+
+        CREATE = "INSERT INTO " + className + "(";
+        SELECT = "SELECT * FROM " + className;
+        UPDATE = "UPDATE " + className + " SET ";
+        DELETE = "DELETE FROM " + className + " WHERE ";
+
+        Field[] fields = this.getClass().getDeclaredFields();
+
+        //SETUP CREATE STRING
+        for(int i = 0; i < fields.length; i++){
+            Field field = fields[i];
+            if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() != DBField.Strategy.Id){
+                if(i>0 && fields[i-1].getAnnotation(DBField.class).strategy() != DBField.Strategy.Id) CREATE += ", ";
+
+                CREATE += field.getName();
+            }
+        }
+        CREATE += ") VALUES(";
+
+        for(int i = 0; i < fields.length; i++){
+            Field field = fields[i];
+            if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() != DBField.Strategy.Id){
+                if(i>0 && fields[i-1].getAnnotation(DBField.class).strategy() != DBField.Strategy.Id) CREATE += ", ";
+
+                CREATE += "?";
+            }
+        }
+        CREATE += ")";
+
+        //SETUP UPDATE STRING
+        for (int i = 0; i < fields.length; i++) {
+            Field field = fields[i];
+            if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() != DBField.Strategy.Id){
+                if(i>0 && fields[i-1].getAnnotation(DBField.class).strategy() != DBField.Strategy.Id) UPDATE += ", ";
+
+                UPDATE += field.getName() + "= ?";
+            }
+        }
+        for (int i = 0; i < fields.length; i++) {
+            Field field = fields[i];
+            if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() == DBField.Strategy.Id){
+                UPDATE += " WHERE " + field.getName() + "= ?";
+                break; //only one identity field
+            }
+        }
+
+        //SETUP DELETE STRING
+        for (int i = 0; i < fields.length; i++) {
+            Field field = fields[i];
+            if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() == DBField.Strategy.Id){
+                DELETE += field.getName() + "= ?";
+                break; //only one identity field
+            }
+        }
+
+//        System.out.println(CREATE);
+//        System.out.println(SELECT);
+//        System.out.println(UPDATE);
+//        System.out.println(DELETE); //Debugging is nice
+    }
+
 
 
     private Connection connection = null;
@@ -41,25 +110,13 @@ public class DatabaseGateway implements Closeable {
         }
         return null;
     }
+    //maybe this should be allowed to thro outside of itself...
     protected ResultSet executeQuery(String sql, Object ... args){
         connection = connect();
         try {
             PreparedStatement statement = connection.prepareStatement(sql);
             int i = 1;
             for(Object object : args){
-//                if(object instanceof Integer integer){
-//                    statement.setInt(i, integer);
-//                } else if (object instanceof Double dubl) {
-//                    statement.setDouble(i, dubl);
-//                } else if (object instanceof String string) {
-//                    statement.setString(i, string);
-//                } else if(object == null){
-//                    statement.setString(i, null);
-//                }
-//                else{
-//                    System.out.println("Instance does not fall within bounds.");
-//                    return null;
-//                }
                 statement.setObject(i, object);
                 i++;
             }
