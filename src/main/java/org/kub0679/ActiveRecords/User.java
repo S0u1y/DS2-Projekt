@@ -3,11 +3,10 @@ package org.kub0679.ActiveRecords;
 import lombok.*;
 import org.kub0679.Utility.DBField;
 import org.kub0679.DatabaseGateway;
+import org.kub0679.Utility.FunctionPreparer;
 import org.kub0679.Utility.ReflectiveCloner;
 
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 @Getter
 @Setter
@@ -41,7 +40,7 @@ public class User extends DatabaseGateway {
     }
 
     public User(int user_Id, int address_Id, String firstname, String lastname, String password, String email, String permission, Date activeuntil, String phone) {
-        this();
+        super();
         User_Id = user_Id;
         Address_Id = address_Id;
         Firstname = firstname;
@@ -99,7 +98,10 @@ public class User extends DatabaseGateway {
     }
 
     public static User findById(int user_id){
-        try(ResultSet rs = new User().executeQuery(FIND_BY_ID, user_id)){
+        try(
+                User user = new User();
+                ResultSet rs = user.executeQuery(FIND_BY_ID, user_id)
+        ){
             if (rs == null) return null;
             if (!rs.next()) return null;
 
@@ -136,7 +138,42 @@ public class User extends DatabaseGateway {
         }
     }
 
+    public void edit(){//edit = update?
+        try (CallableStatement stmt = FunctionPreparer.prepareFunction(
+                "EditUser(?,?,?,?,?,?,?,?)", Types.NULL,
+                User_Id, Firstname, Lastname, Email, Phone, Address_Id, Password, Activeuntil)
+        )
+        {
+            stmt.execute();
+            close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
+    public void delete(){
+        try (CallableStatement stmt = FunctionPreparer.prepareFunction(
+                "DeleteUser(?)", Types.NULL, User_Id)
+        )
+        {
+            stmt.execute();
+            close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void changeRole(String newRole){
+        try (CallableStatement stmt = FunctionPreparer.prepareFunction(
+                "ChangeRole(?, ?)", Types.NULL, User_Id, newRole)
+        )
+        {
+            stmt.execute();
+            close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }
 

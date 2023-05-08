@@ -126,5 +126,13 @@ public class Comment extends DatabaseGateway {
         }
     }
 
+    public void delete(){
+        if(!isPersistent()) return;
+
+        try(ResultSet rs = executeQuery(DELETE, comment_id)){
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }

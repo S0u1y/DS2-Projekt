@@ -1,10 +1,13 @@
 import org.junit.jupiter.api.Test;
 import org.kub0679.ActiveRecords.Comment;
 import org.kub0679.ActiveRecords.Document;
+import org.kub0679.ActiveRecords.Payment;
 import org.kub0679.ActiveRecords.User;
 import org.kub0679.Searcher;
 import org.kub0679.Utility.Encoding;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 public class MainTests {
@@ -98,7 +101,16 @@ public class MainTests {
 
     }
 
+    @Test
+    public void TestEditUser(){
+        User user = User.findById(2);
 
+        assert user != null;
+        user.setPhone("+81750286037");
+
+        user.edit();
+        //maybe call edit on getAll() ?
+    }
 
 
 

@@ -5,7 +5,6 @@ import org.kub0679.ActiveRecords.Document;
 import org.kub0679.ActiveRecords.User;
 import org.kub0679.Utility.FunctionPreparer;
 
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;

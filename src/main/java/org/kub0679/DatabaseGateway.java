@@ -11,6 +11,8 @@ import java.util.Arrays;
 //Supertype for gateways
 public class DatabaseGateway implements Closeable {
 
+    Integer id;
+
     private String URL;
 
     //perhaps it would be worth creating a third party mapper for class-CRUD
@@ -110,6 +112,7 @@ public class DatabaseGateway implements Closeable {
     }
 
     public DatabaseGateway(ResultSet resultSet) {
+        this();
         Field[] fields = this.getClass().getDeclaredFields();
 
         try {
@@ -178,6 +181,13 @@ public class DatabaseGateway implements Closeable {
             PreparedStatement statement = connection.prepareStatement(sql);
             int i = 1;
             for(Object object : args){
+                if(object instanceof Object[] insideArray){
+                    for(Object objectInArray : insideArray){
+                        statement.setObject(i, objectInArray);
+                        i++;
+                    }
+                    continue;
+                }
                 statement.setObject(i, object);
                 i++;
             }
@@ -217,19 +227,59 @@ public class DatabaseGateway implements Closeable {
         }
     }
 
-    public String getCREATE() {
-        return CREATE;
+    public boolean update() {
+
+
+        Field[] fields = this.getClass().getDeclaredFields();
+        Object[] objects = Arrays.stream(fields)
+                .filter(field -> field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() != DBField.Strategy.Id)
+                .map(field -> {
+                    try {
+                        Object output;
+                        if(!field.canAccess(this)){
+                            field.setAccessible(true);
+                            output = field.get(this);
+                            field.setAccessible(false);
+                        }else{
+                            output = field.get(this);
+                        }
+                        return output;
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toArray();//get all DBFields objects
+
+        updateID();
+
+
+        if(id != null && id == 0) return false;
+
+        try(ResultSet rs = executeQuery(UPDATE, objects, id)){
+            return true;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public String getSELECT() {
-        return SELECT;
+    protected void updateID(){
+        Field[] fields = this.getClass().getDeclaredFields();
+        for(Field field : fields){
+            if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() == DBField.Strategy.Id){
+                try {
+                    if(!field.canAccess(this)){
+                        field.setAccessible(true);
+                        id = (Integer)field.get(this);
+                        field.setAccessible(false);
+                    }else{
+                        id = (Integer)field.get(this);
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+                break;
+            }
+        }//set id
     }
 
-    public String getUPDATE() {
-        return UPDATE;
-    }
-
-    public String getDELETE() {
-        return DELETE;
-    }
 }
