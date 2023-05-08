@@ -4,11 +4,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.kub0679.DBField;
+import org.kub0679.Utility.DBField;
 import org.kub0679.DatabaseGateway;
 import org.kub0679.Utility.ReflectiveCloner;
 
-import javax.print.Doc;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;

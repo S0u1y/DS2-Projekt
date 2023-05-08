@@ -1,4 +1,4 @@
-package org.kub0679;
+package org.kub0679.Utility;
 
 
 import java.lang.annotation.ElementType;

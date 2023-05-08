@@ -1,6 +1,7 @@
 package org.kub0679;
 
 import org.kub0679.Utility.CRUDMAPPER;
+import org.kub0679.Utility.DBField;
 
 import java.io.Closeable;
 import java.lang.reflect.Field;
@@ -15,7 +16,6 @@ public class DatabaseGateway implements Closeable {
     //perhaps it would be worth creating a third party mapper for class-CRUD
     protected String CREATE;
     protected String SELECT;
-    protected String FIND_BY_ID;
     protected String UPDATE;
     protected String DELETE;
 
@@ -144,7 +144,7 @@ public class DatabaseGateway implements Closeable {
     //one connection per class,
     //might be worth considering to create a separate DBConnector class that'd be static for all.
     private static Connection connection = null;
-    protected Connection connect(){
+    public Connection connect(){
         if(connection == null)
             try {
                 connection = DriverManager.getConnection(

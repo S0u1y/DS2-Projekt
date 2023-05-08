@@ -1,7 +1,7 @@
 package org.kub0679.ActiveRecords;
 
 import lombok.*;
-import org.kub0679.DBField;
+import org.kub0679.Utility.DBField;
 import org.kub0679.DatabaseGateway;
 import org.kub0679.Utility.ReflectiveCloner;
 

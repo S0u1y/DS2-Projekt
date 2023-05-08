@@ -1,16 +1,17 @@
 package org.kub0679;
 
+import org.kub0679.ActiveRecords.Comment;
 import org.kub0679.ActiveRecords.Document;
 import org.kub0679.ActiveRecords.User;
+import org.kub0679.Utility.FunctionPreparer;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Searcher implements Closeable {
-    public static final DatabaseGateway db = new DatabaseGateway();
+//think about inheritance X composition for the future.
+public class Searcher extends FunctionPreparer {
 
     public static List<User> searchUsers(String keyword, String option){
 
@@ -26,7 +27,7 @@ public class Searcher implements Closeable {
             }
 
             rs.close();
-            Searcher.closeInternal();
+            closeInternal();
 
             return output;
         } catch (SQLException e) {
@@ -47,7 +48,7 @@ public class Searcher implements Closeable {
             }
 
             rs.close();
-            Searcher.closeInternal();
+            closeInternal();
 
             return output;
         } catch (SQLException e) {
@@ -56,23 +57,47 @@ public class Searcher implements Closeable {
 
     }
 
+    public static List<User> searchStaff(String keyword, String option){
+        List<User> output = new ArrayList<>();
 
-    private static CallableStatement prepareFunction(String sql, int type, Object ... objects) throws SQLException {
-        Connection connection = db.connect();
-        CallableStatement stmt = connection.prepareCall("{? = CALL " + sql + "}");
-        stmt.registerOutParameter(1, type); //this type is mental, why not use enums??
-        for (int i = 2; i < objects.length+2; i++) {
-            stmt.setObject(i, objects[i-2]);
+        try{
+            CallableStatement stmt = prepareFunction("SearchStaff(?, ?)", Types.REF_CURSOR, keyword, option);
+            stmt.execute();
+
+            ResultSet rs = (ResultSet) stmt.getObject(1);
+            while(rs.next()){
+                output.add(new User(rs));
+            }
+
+            rs.close();
+            closeInternal();
+
+            return output;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static List<Comment> searchComments(String keyword, String option){
+        List<Comment> output = new ArrayList<>();
+
+        try{
+            CallableStatement stmt = prepareFunction("SearchComments(?, ?)", Types.REF_CURSOR, keyword, option);
+            stmt.execute();
+
+            ResultSet rs = (ResultSet) stmt.getObject(1);
+            while(rs.next()){
+                output.add(new Comment(rs));
+            }
+
+            rs.close();
+            closeInternal();
+
+            return output;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
 
-        return stmt;
     }
 
-    @Override
-    public void close() throws IOException {
-        closeInternal();
-    }
-    public static void closeInternal(){
-        db.close();
-    }
 }
