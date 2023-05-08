@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.kub0679.DBField;
 import org.kub0679.DatabaseGateway;
 
 import java.sql.Date;
@@ -16,10 +17,15 @@ import java.sql.SQLException;
 @ToString
 public class Document extends DatabaseGateway {
 
+    @DBField(strategy = DBField.Strategy.Id)
     private int document_id;
+    @DBField
     private String title;
+    @DBField
     private Date dateAdded;
+    @DBField
     private Date releaseYear;
+    @DBField
     private String description;
 
 
@@ -36,6 +42,10 @@ public class Document extends DatabaseGateway {
         this.dateAdded = dateAdded;
         this.releaseYear = releaseYear;
         this.description = description;
+    }
+
+    public Document(ResultSet rs){
+        super(rs);
     }
 
     public boolean create(){

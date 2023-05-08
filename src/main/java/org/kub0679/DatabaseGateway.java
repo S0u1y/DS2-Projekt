@@ -3,6 +3,7 @@ package org.kub0679;
 import java.io.Closeable;
 import java.lang.reflect.Field;
 import java.sql.*;
+import java.util.Arrays;
 
 //Supertype for gateways
 public class DatabaseGateway implements Closeable {
@@ -70,8 +71,6 @@ public class DatabaseGateway implements Closeable {
             }
         }
 
-
-
         //SETUP DELETE STRING
         for (int i = 0; i < fields.length; i++) {
             Field field = fields[i];
@@ -91,18 +90,25 @@ public class DatabaseGateway implements Closeable {
         Field[] fields = this.getClass().getDeclaredFields();
 
         try {
-            for(int i = 0; i < fields.length; i++){
-                Field field = fields[i];
-                if(!field.isAnnotationPresent(DBField.class)) continue;
+            ResultSetMetaData metaData = resultSet.getMetaData();
 
+            for(int i = 1; i <= metaData.getColumnCount(); i++){
+
+
+                String colName = metaData.getColumnName(i);
+                Field field = Arrays.stream(fields)
+                        .filter(field1 -> colName.equalsIgnoreCase(field1.getName()))
+                        .findFirst().orElse(null);
+
+                assert field != null;
                 if(!field.canAccess(this)){
                     field.setAccessible(true);
 
-                    field.set(this, resultSet.getObject(field.getName(), field.getType()));
+                    field.set(this, resultSet.getObject(colName, field.getType()));
 
                     field.setAccessible(false);
                 }else{
-                    field.set(this, resultSet.getObject(field.getName(), field.getType()));
+                    field.set(this, resultSet.getObject(colName, field.getType()));
                 }
             }
         } catch (IllegalAccessException | SQLException e) {

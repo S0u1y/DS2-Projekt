@@ -1,6 +1,9 @@
 import org.junit.jupiter.api.Test;
 import org.kub0679.ActiveRecords.User;
+import org.kub0679.Searcher;
 import org.kub0679.Utility.Encoding;
+
+import java.util.List;
 
 public class MainTests {
     @Test
@@ -59,6 +62,22 @@ public class MainTests {
         for(User user : users){
             System.out.println(user);
         }
+    }
+
+    @Test
+    public void TestSearchUsers(){
+        List<User> users = Searcher.searchUsers("", "first-name");
+
+        for (User user: users) {
+            System.out.println(user);
+        }
+
+        users = Searcher.searchUsers("", "age");
+
+        for (User user: users) {
+            System.out.println(user);
+        }
+
     }
 
 }
