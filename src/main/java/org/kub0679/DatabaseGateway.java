@@ -1,5 +1,7 @@
 package org.kub0679;
 
+import org.kub0679.Utility.CRUDMAPPER;
+
 import java.io.Closeable;
 import java.lang.reflect.Field;
 import java.sql.*;
@@ -10,15 +12,39 @@ public class DatabaseGateway implements Closeable {
 
     private String URL;
 
-    protected static String CREATE;
-    protected static String SELECT;
+    //perhaps it would be worth creating a third party mapper for class-CRUD
+    protected String CREATE;
+    protected String SELECT;
     protected String FIND_BY_ID;
-    protected static String UPDATE;
-    protected static String DELETE;
+    protected String UPDATE;
+    protected String DELETE;
 
     public DatabaseGateway(){
-        if(CREATE != null) return;
-        System.out.println("Creating Base");
+        CRUDMAPPER.crud crud = CRUDMAPPER.cruds.get(this.getClass().getSimpleName());
+
+        if(crud != null){
+            crud = CRUDMAPPER.cruds.get(this.getClass().getSimpleName());
+
+            CREATE = crud.CREATE();
+            SELECT = crud.SELECT();
+            UPDATE = crud.UPDATE();
+            DELETE = crud.DELETE();
+
+            return;
+        }
+
+        var strings = setupCRUD();
+        CREATE = strings[0];
+        SELECT = strings[1];
+        UPDATE = strings[2];
+        DELETE = strings[3];
+
+        CRUDMAPPER.cruds.put(this.getClass().getSimpleName(), new CRUDMAPPER.crud(CREATE, SELECT, UPDATE, DELETE));
+
+    }
+
+    protected String[] setupCRUD(){
+        String create, select, update, delete;
 
         String className = this.getClass().getSimpleName();
 
@@ -26,10 +52,10 @@ public class DatabaseGateway implements Closeable {
             className = "\""+ className +"\"";
         }
 
-        CREATE = "INSERT INTO " + className + "(";
-        SELECT = "SELECT * FROM " + className;
-        UPDATE = "UPDATE " + className + " SET ";
-        DELETE = "DELETE FROM " + className + " WHERE ";
+        create = "INSERT INTO " + className + "(";
+        select = "SELECT * FROM " + className;
+        update = "UPDATE " + className + " SET ";
+        delete = "DELETE FROM " + className + " WHERE ";
 
         Field[] fields = this.getClass().getDeclaredFields();
 
@@ -37,36 +63,36 @@ public class DatabaseGateway implements Closeable {
         for(int i = 0; i < fields.length; i++){
             Field field = fields[i];
             if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() != DBField.Strategy.Id){
-                if(i>0 && fields[i-1].getAnnotation(DBField.class).strategy() != DBField.Strategy.Id) CREATE += ", ";
+                if(i>0 && fields[i-1].getAnnotation(DBField.class).strategy() != DBField.Strategy.Id) create += ", ";
 
-                CREATE += field.getName();
+                create += field.getName();
             }
         }
-        CREATE += ") VALUES(";
+        create += ") VALUES(";
 
         for(int i = 0; i < fields.length; i++){
             Field field = fields[i];
             if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() != DBField.Strategy.Id){
-                if(i>0 && fields[i-1].getAnnotation(DBField.class).strategy() != DBField.Strategy.Id) CREATE += ", ";
+                if(i>0 && fields[i-1].getAnnotation(DBField.class).strategy() != DBField.Strategy.Id) create += ", ";
 
-                CREATE += "?";
+                create += "?";
             }
         }
-        CREATE += ")";
+        create += ")";
 
         //SETUP UPDATE STRING
         for (int i = 0; i < fields.length; i++) {
             Field field = fields[i];
             if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() != DBField.Strategy.Id){
-                if(i>0 && fields[i-1].getAnnotation(DBField.class).strategy() != DBField.Strategy.Id) UPDATE += ", ";
+                if(i>0 && fields[i-1].getAnnotation(DBField.class).strategy() != DBField.Strategy.Id) update += ", ";
 
-                UPDATE += field.getName() + "= ?";
+                update += field.getName() + "= ?";
             }
         }
         for (int i = 0; i < fields.length; i++) {
             Field field = fields[i];
             if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() == DBField.Strategy.Id){
-                UPDATE += " WHERE " + field.getName() + "= ?";
+                update += " WHERE " + field.getName() + "= ?";
                 break; //only one identity field
             }
         }
@@ -75,15 +101,12 @@ public class DatabaseGateway implements Closeable {
         for (int i = 0; i < fields.length; i++) {
             Field field = fields[i];
             if(field.isAnnotationPresent(DBField.class) && field.getAnnotation(DBField.class).strategy() == DBField.Strategy.Id){
-                DELETE += field.getName() + "= ?";
+                delete += field.getName() + "= ?";
                 break; //only one identity field
             }
         }
 
-//        System.out.println(CREATE);
-//        System.out.println(SELECT);
-//        System.out.println(UPDATE);
-//        System.out.println(DELETE); //Debugging is nice
+        return new String[]{create, select, update, delete};
     }
 
     public DatabaseGateway(ResultSet resultSet) {
@@ -100,7 +123,8 @@ public class DatabaseGateway implements Closeable {
                         .filter(field1 -> colName.equalsIgnoreCase(field1.getName()))
                         .findFirst().orElse(null);
 
-                assert field != null;
+//                assert field != null;
+                if(field == null) continue;
                 if(!field.canAccess(this)){
                     field.setAccessible(true);
 
@@ -179,6 +203,10 @@ public class DatabaseGateway implements Closeable {
 
     public void close(){
         System.out.println("Closing Gateway...");
+        closeInternal();
+    }
+
+    public static void closeInternal(){
         try {
             if(connection != null && !connection.isClosed()){
                 connection.close();
@@ -189,4 +217,19 @@ public class DatabaseGateway implements Closeable {
         }
     }
 
+    public String getCREATE() {
+        return CREATE;
+    }
+
+    public String getSELECT() {
+        return SELECT;
+    }
+
+    public String getUPDATE() {
+        return UPDATE;
+    }
+
+    public String getDELETE() {
+        return DELETE;
+    }
 }

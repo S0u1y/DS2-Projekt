@@ -6,7 +6,9 @@ import lombok.Setter;
 import lombok.ToString;
 import org.kub0679.DBField;
 import org.kub0679.DatabaseGateway;
+import org.kub0679.Utility.ReflectiveCloner;
 
+import javax.print.Doc;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,8 +19,10 @@ import java.sql.SQLException;
 @ToString
 public class Document extends DatabaseGateway {
 
+    protected final static String FIND_BY_ID = "SELECT * FROM document WHERE document_id = ?";
+
     @DBField(strategy = DBField.Strategy.Id)
-    private int document_id;
+    private Integer document_id;
     @DBField
     private String title;
     @DBField
@@ -28,11 +32,8 @@ public class Document extends DatabaseGateway {
     @DBField
     private String description;
 
-
-    private static final String FIND_BY_ID = "SELECT * FROM document WHERE document_id = ?";
     public Document(){
-        CREATE = "INSERT INTO document(title, dateAdded, releaseYear, description) VALUES(?, ?, ?, ?)";
-        UPDATE = "UPDATE document SET title=?, dateAdded=?, releaseYear=?, description=? WHERE document_id = ?";
+        super();
     }
 
     public Document(int document_id, String title, Date dateAdded, Date releaseYear, String description) {
@@ -66,27 +67,39 @@ public class Document extends DatabaseGateway {
     public boolean update() {
         if(document_id == 0) return false;
 
-        try(ResultSet rs = executeQuery(CREATE, title, dateAdded, releaseYear, description)){
+        try(ResultSet rs = executeQuery(UPDATE, title, dateAdded, releaseYear, description, document_id)){
             return true;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public Document findById(int documentId) {
-        try(ResultSet rs = new Document().executeQuery(FIND_BY_ID, documentId)){
+    public static Document findById(int documentId) {
+        try(
+                Document document = new Document();
+                ResultSet rs = document.executeQuery(FIND_BY_ID, documentId);
+        ){
             if (rs == null) return null;
             if (!rs.next()) return null;
-            return new Document(
-                    rs.getInt("document_id"),
-                    rs.getString("title"),
-                    rs.getDate("dateAdded"),
-                    rs.getDate("releaseYear"),
-                    rs.getString("description")
-            );
+
+            return new Document(rs);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Document findById(){
+        return findById(document_id);
+    }
+
+    public boolean load(){
+        if(!this.isPersistent()) return false;
+
+        Document document = findById();
+
+        ReflectiveCloner.clone(document, this);
+
+        return true;
     }
 
     public boolean isPersistent(){

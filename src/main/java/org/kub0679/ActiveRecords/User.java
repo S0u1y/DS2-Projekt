@@ -3,6 +3,7 @@ package org.kub0679.ActiveRecords;
 import lombok.*;
 import org.kub0679.DBField;
 import org.kub0679.DatabaseGateway;
+import org.kub0679.Utility.ReflectiveCloner;
 
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -10,9 +11,11 @@ import java.sql.SQLException;
 
 @Getter
 @Setter
-@Builder
 @ToString
 public class User extends DatabaseGateway {
+
+    protected final static String FIND_BY_ID = "SELECT * FROM \"User\" WHERE user_id = ?";
+
     @DBField(strategy = DBField.Strategy.Id)
     private Integer User_Id;
     @DBField
@@ -32,7 +35,6 @@ public class User extends DatabaseGateway {
     @DBField
     public String Phone;
 
-    private static final String FIND_BY_ID = "SELECT * FROM \"User\" WHERE user_id = ?";
 
     public User() {
         super();
@@ -75,7 +77,7 @@ public class User extends DatabaseGateway {
     public static User[] getAll() {
         try (
                 User user = new User();
-                ResultSet rs = user.executeQuery(SELECT);
+                ResultSet rs = user.executeQuery(user.SELECT);
                 ResultSet sizeResult = user.executeQuery("Select count(*) FROM \"User\"");
         ){
             if (rs == null) return null;
@@ -83,9 +85,12 @@ public class User extends DatabaseGateway {
             int size = sizeResult.getInt(1);
             User[] output = new User[size];
 
-            for (int i = 0; rs.next(); i++) {
+            for (int i = 0; rs.next() && i < size; i++) {
                 output[i] = new User(rs);
             }
+
+            rs.close();
+            sizeResult.close();
 
             return output;
         } catch (SQLException e) {
@@ -108,10 +113,23 @@ public class User extends DatabaseGateway {
         return findById(User_Id);
     }
 
+    public boolean load(){
+        if(!this.isPersistent()) return false;
+
+        User user = findById();
+
+        ReflectiveCloner.clone(user, this);
+
+        return true;
+    }
+    public boolean isPersistent(){
+        return User_Id != 0;
+    }
+
     public boolean update() {
         if(User_Id == 0) return false;
 
-        try(ResultSet rs = executeQuery(CREATE, Address_Id, Firstname, Lastname, Password, Email, Permission, Activeuntil, Phone, User_Id)){
+        try(ResultSet rs = executeQuery(UPDATE, Address_Id, Firstname, Lastname, Password, Email, Permission, Activeuntil, Phone, User_Id)){
             return true;
         } catch (SQLException e) {
             throw new RuntimeException(e);
