@@ -110,6 +110,7 @@ public class Payment extends DatabaseGateway {
             //attempt to send money via bank
             //...
             close();
+            load();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

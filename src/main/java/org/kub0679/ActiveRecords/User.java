@@ -170,6 +170,7 @@ public class User extends DatabaseGateway {
         {
             stmt.execute();
             close();
+            load();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

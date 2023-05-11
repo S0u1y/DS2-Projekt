@@ -63,6 +63,7 @@ public class MainTests {
     public void TestGetAll(){
         User[] users = User.getAll();
         assert users != null;
+
         for(User user : users){
             System.out.println(user);
         }
@@ -77,13 +78,13 @@ public class MainTests {
 
     @Test
     public void TestSearchUsers(){
-        List<User> users = Searcher.searchUsers("", "first-name");
+        List<User> users = Searcher.searchUsers("Bob", "last-name");
 
         for (User user: users) {
             System.out.println(user);
         }
 
-        users = Searcher.searchUsers("", "age");
+        users = Searcher.searchUsers("Bob", "membership-last");
 
         for (User user: users) {
             System.out.println(user);
@@ -112,6 +113,27 @@ public class MainTests {
         //maybe call edit on getAll() ?
     }
 
+    @Test
+    public void TestRefund(){
+        Payment payment = Payment.findById(3);
+        assert payment != null;
+
+        System.out.println(payment);
+
+        payment.refund();
+
+        System.out.println(payment);
+
+    }
+
+    @Test
+    public void TestChangeRole(){
+        User josh = User.findById(2);
+        assert josh != null;
+
+        josh.changeRole("Z");
+
+    }
 
 
 }
