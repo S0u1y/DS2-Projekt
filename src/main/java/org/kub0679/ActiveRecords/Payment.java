@@ -5,12 +5,11 @@ import lombok.Setter;
 import lombok.ToString;
 import org.kub0679.DatabaseGateway;
 import org.kub0679.Utility.DBField;
+import org.kub0679.Utility.FunctionPreparer;
 import org.kub0679.Utility.ReflectiveCloner;
 
 import java.lang.reflect.Field;
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Arrays;
 
 @Getter
@@ -99,9 +98,22 @@ public class Payment extends DatabaseGateway {
         return true;
     }
     public boolean isPersistent(){
-        return payment_id != 0;
+        return payment_id != null && payment_id != 0;
     }
 
+    public void refund(){
+        try (CallableStatement stmt = FunctionPreparer.prepareFunction(
+                "Refund(?)", Types.NULL, payment_id)
+        )
+        {
+            stmt.execute();
+            //attempt to send money via bank
+            //...
+            close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }
 
