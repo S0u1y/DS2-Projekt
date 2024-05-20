@@ -1,4 +1,4 @@
-#Database Systems 2 Project
+# Database Systems 2 Project
 
 This is a basic project for DS2 at VŠB-TUO.
 
